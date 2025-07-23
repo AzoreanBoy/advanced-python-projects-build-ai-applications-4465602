@@ -52,9 +52,9 @@ jobs:
           
           echo "✅ CURL Fetch Done"
           
-          TAGS=$(echo "$RESPONSE" | jq '[.data.pages.single.tags[].tag]')
+          TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
           echo "✅ Tags fetched: $TAGS"
-          echo "TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag | @json]' | sed 's/\\\"/"/g')" >> "$GITHUB_ENV"
+          echo "TAGS=$TAGS_JSON" >> "$GITHUB_ENV"
           echo "::endgroup::"
 
 
