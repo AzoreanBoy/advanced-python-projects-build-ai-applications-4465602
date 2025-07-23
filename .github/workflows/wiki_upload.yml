@@ -26,7 +26,6 @@ jobs:
       - name: Create GRAPH_QUERY
         env:
           WIKI_PAGE_ID: ${{ vars.WIKI_PAGE_ID }}
-          PAGE_PATH: ${{ vars.PAGE_PATH }}
         run: |
           echo "::group::🔍 Reading README.md content..."
           CONTENT=$(cat README.md | jq -Rs .)
@@ -44,7 +43,6 @@ jobs:
                 isPrivate: false,
                 isPublished: true,
                 locale: "en",
-                path: "$PAGE_PATH",
                 tags: ["updated"]
               ) {
                 responseResult {
