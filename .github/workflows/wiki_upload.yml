@@ -32,7 +32,7 @@ jobs:
           echo "::group::🔍 Fetching current tags from Wiki.js..."
           QUERY='{
             pages {
-              single(id: '"$WIKI_PAGE_ID"') {
+              single(id: $WIKI_PAGE_ID) {
                 tags {
                   tag
                 }
@@ -44,6 +44,9 @@ jobs:
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
+          
+          echo ""
+          
           TAGS=$(echo "$RESPONSE" | jq '[.data.pages.single.tags[].tag]')
           echo "✅ Tags fetched: $TAGS"
           echo "TAGS=$TAGS" >> "$GITHUB_ENV"
