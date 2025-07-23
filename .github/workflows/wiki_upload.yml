@@ -83,7 +83,7 @@ jobs:
                 isPrivate: false,
                 isPublished: true,
                 locale: "en",
-                tags: ["updated"]
+                tags: $TAGS
               ) {
                 responseResult {
                   succeeded
