@@ -30,17 +30,22 @@ jobs:
           WIKI_PAGE_ID: ${{ vars.WIKI_PAGE_ID }}
         run: |
           echo "::group::🔍 Fetching current tags from Wiki.js..."
-          QUERY='{
+          QUERY=$(cat << EOF
+          {         
             pages {
-              single(id: $WIKI_PAGE_ID) {
-                tags {
-                  tag
-                }
+              single (id:$WIKI_PAGE_ID) {
+                id
+                title
+                tags{tag}
               }
             }
-          }'
+          }
+          EOF
+          )
 
-          echo "Fetching API"
+          echo "Query: $QUERY"
+
+          echo "📤Fetching API"
 
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
 
