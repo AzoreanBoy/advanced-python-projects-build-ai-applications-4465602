@@ -79,7 +79,7 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::🚀 Sending request to Wiki.js API..."
-          curl -X POST $WIKI_API_URL \
+          curl -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD" | jq
