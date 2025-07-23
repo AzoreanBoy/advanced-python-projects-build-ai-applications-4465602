@@ -104,6 +104,8 @@ jobs:
           echo "✅ GraphQL query prepared."
           echo "::endgroup::"
 
+          echo $GRAPHQL_QUERY
+
           echo "📤 Send Query to GITHUB ENV"
           echo "GRAPHQL_QUERY="$GRAPHQL_QUERY >> "$GITHUB_ENV"
           echo Done
