@@ -40,7 +40,6 @@ jobs:
               update(
                 id: $WIKI_PAGE_ID,
                 content: $CONTENT,
-                description: "README atualizado",
                 editor: "markdown",
                 isPrivate: false,
                 isPublished: true,
