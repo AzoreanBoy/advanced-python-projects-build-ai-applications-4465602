@@ -36,7 +36,6 @@ jobs:
           
           echo "✅ CURL Fetch Done"
 
-          echo "$RESPONSE"
           echo "$RESPONSE" | jq -c
           echo "$RESPONSE" | jq -c '[.data.pages.single.content]
           
