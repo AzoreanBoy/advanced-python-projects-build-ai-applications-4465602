@@ -22,7 +22,7 @@ jobs:
           EOF
           )
 
-          echo "Query: $QUERY"
+          echo $QUERY
 
           echo "📤Fetching API"
 
