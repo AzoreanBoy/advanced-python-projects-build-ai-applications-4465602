@@ -37,10 +37,8 @@ jobs:
             --data "$JSON_PAYLOAD")
           
           echo "✅ CURL Fetch Done"
-
-          echo $RESPONSE | jq -c
           
-          CONTENT=$(echo "$RESPONSE" | jq -c '[.data.pages.single.content]')
+          CONTENT=$(echo "$RESPONSE" | jq -c '.data.pages.single.content')
           echo "✅ Content fetched: $CONTENT"
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
           echo "::endgroup::"
