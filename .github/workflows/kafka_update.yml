@@ -9,6 +9,8 @@ jobs:
     environment: dev
     steps:
       - name: Get Content from Wiki
+        env:
+          WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
           echo "::group::🔍 Fetching content from Wiki.js..."
           QUERY=$(cat << EOF
@@ -36,9 +38,7 @@ jobs:
           
           echo "✅ CURL Fetch Done"
 
-          echo $RESPONSE
-
-          echo "$RESPONSE" | jq -c '[.data.pages.single.content]
+          echo $RESPONSE | jq -c
           
           CONTENT=$(echo "$RESPONSE" | jq -c '[.data.pages.single.content]')
           echo "✅ Content fetched: $CONTENT"
