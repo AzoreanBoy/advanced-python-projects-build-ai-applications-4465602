@@ -35,6 +35,10 @@ jobs:
             --data "$JSON_PAYLOAD")
           
           echo "✅ CURL Fetch Done"
+
+          echo "$RESPONSE"
+          echo "$RESPONSE" | jq -c
+          echo "$RESPONSE" | jq -c '[.data.pages.single.content]
           
           CONTENT=$(echo "$RESPONSE" | jq -c '[.data.pages.single.content]')
           echo "✅ Content fetched: $CONTENT"
