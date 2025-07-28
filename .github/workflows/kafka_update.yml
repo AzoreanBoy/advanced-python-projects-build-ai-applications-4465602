@@ -68,5 +68,5 @@ jobs:
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
           echo $update
 
-          new_content = $CONTENT + $update
+          new_content = "$CONTENT"$'\n'"$update"
           echo $new_content
