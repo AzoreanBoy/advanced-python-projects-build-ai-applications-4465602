@@ -60,7 +60,7 @@ jobs:
           topicName=$(jq -r '.metadata.topicName' "$CONFIG_FILE")
           topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
 
-          link = 'https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/' + $nomeTopico
+          link = "https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/$nomeTopico"
 
           echo "Nome do Tópico: $topicName"
           echo "Descrição do Tópico: $topicDescription"
