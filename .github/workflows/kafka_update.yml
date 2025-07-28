@@ -62,4 +62,6 @@ jobs:
 
           echo "Nome do Tópico: $topicName"
           echo "Descrição do Tópico: $topicDescription"
-
+          
+          update="| $topicName | $topicDescription | Link | Ativo |"
+          echo $update
