@@ -71,8 +71,80 @@ jobs:
           new_content="$CONTENT"$'\n'"$update" >> "$GITHUB_ENV"
           echo $new_content
       
-      - name: Update WIKI Page
+      - name: Fetch current tags from Wiki.js
         env:
-          new_content: ${{ env.new_content }}
+          WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
-          echo $new_content
+          echo "::group::🔍 Fetching current tags from Wiki.js..."
+          QUERY=$(cat << EOF
+          {         
+            pages {
+              single (id:$WIKI_PAGE_ID) {
+                id
+                title
+                tags{tag}
+              }
+            }
+          }
+          EOF
+          )
+
+          echo "Query: $QUERY"
+
+          echo "📤Fetching API"
+
+          JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
+
+
+          RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
+            -H "Authorization: Bearer $WIKI_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$JSON_PAYLOAD")
+          
+          echo "✅ CURL Fetch Done"
+          
+          TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
+          echo "✅ Tags fetched: $TAGS"
+          echo "TAGS=$TAGS" >> "$GITHUB_ENV"
+          echo "::endgroup::"
+      
+      - name: Create GRAPH_QUERY to Update WIKI Page
+        run: |
+          echo "::group::🔧 Preparing GraphQL query..."
+          GRAPHQL_QUERY=$(cat << EOF
+          mutation {
+            pages {
+              update(
+                id: 27,
+                content: $new_content,
+                editor: "markdown",
+                isPrivate: false,
+                isPublished: true,
+                locale: "en",
+                tags: $TAGS
+              ) {
+                responseResult {
+                  succeeded
+                  slug
+                  message
+                }
+                page{
+                  id
+                  title
+                  path
+                  updatedAt
+                }
+              }
+            }
+          }
+          EOF
+          )
+          echo "✅ GraphQL query prepared."
+          echo "::endgroup::"
+
+          echo $GRAPHQL_QUERY
+
+          echo "📤 Send Query to GITHUB ENV"
+          echo "GRAPHQL_QUERY="$GRAPHQL_QUERY >> "$GITHUB_ENV"
+          echo Done
+      
