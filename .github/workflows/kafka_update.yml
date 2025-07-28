@@ -61,5 +61,5 @@ jobs:
           topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
 
           echo "Nome do Tópico: $topicName"
-          echp "Descrição do Tópico: $topicDescription"
+          echo "Descrição do Tópico: $topicDescription"
 
