@@ -68,8 +68,12 @@ jobs:
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
           echo $update
 
-          new_content="$CONTENT"$'\n'"$update" >> "$GITHUB_ENV"
+          new_content="$CONTENT"$'\n'"$update"
           echo $new_content
+
+          echo "📤 Send Content to GITHUB ENV"
+          echo "new_content="$new_content >> "$GITHUB_ENV"
+          echo Done
       
       - name: Fetch current tags from Wiki.js
         env:
