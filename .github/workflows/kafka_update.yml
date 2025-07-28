@@ -50,7 +50,7 @@ jobs:
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
           echo "::endgroup::"
       
-      - name: Update WIKI Content
+      - name: Update Content
         env:
           CONTENT: ${{ env.CONTENT }}
         run: |
@@ -68,5 +68,11 @@ jobs:
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
           echo $update
 
-          new_content="$CONTENT"$'\n'"$update"
+          new_content="$CONTENT"$'\n'"$update" >> "$GITHUB_ENV"
+          echo $new_content
+      
+      - name: Update WIKI Page
+        env:
+          new_content: ${{ env.new_content }}
+        run: |
           echo $new_content
