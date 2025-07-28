@@ -79,7 +79,7 @@ jobs:
           QUERY=$(cat << EOF
           {         
             pages {
-              single (id:$WIKI_PAGE_ID) {
+              single (id:27) {
                 id
                 title
                 tags{tag}
