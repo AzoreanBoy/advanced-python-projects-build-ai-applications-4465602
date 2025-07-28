@@ -109,6 +109,8 @@ jobs:
           echo "::endgroup::"
       
       - name: Create GRAPH_QUERY to Update WIKI Page
+        env:
+          new_content: ${{ env.new_content }}
         run: |
           echo "::group::🔧 Preparing GraphQL query..."
           GRAPHQL_QUERY=$(cat << EOF
