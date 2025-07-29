@@ -126,7 +126,7 @@ jobs:
             pages {
               update(
                 id: 28,
-                content: \"$new_content\",
+                content: "$new_content",
                 editor: "markdown",
                 isPrivate: false,
                 isPublished: true,
