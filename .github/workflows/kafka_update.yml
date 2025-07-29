@@ -19,7 +19,7 @@ jobs:
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
-          echo "::group::🔍 Fetching content from Wiki.js..."
+          echo "🔍 Fetching content from Wiki.js..."
           QUERY=$(cat << EOF
           {         
             pages {
@@ -50,7 +50,6 @@ jobs:
 
           echo "✅ Content fetched: $CONTENT"
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
-          echo "::endgroup::"
       
       - name: Update Content
         env:
@@ -83,7 +82,7 @@ jobs:
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
-          echo "::group::🔍 Fetching current tags from Wiki.js..."
+          echo "🔍 Fetching current tags from Wiki.js..."
           QUERY=$(cat << EOF
           {         
             pages {
@@ -114,13 +113,12 @@ jobs:
           TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
           echo "✅ Tags fetched: $TAGS"
           echo "TAGS=$TAGS" >> "$GITHUB_ENV"
-          echo "::endgroup::"
       
       - name: Create GRAPH_QUERY to Update WIKI Page
         env:
           new_content: ${{ env.new_content }}
         run: |
-          echo "::group::🔧 Preparing GraphQL query..."
+          echo "🔧 Preparing GraphQL query..."
           GRAPHQL_QUERY=$(cat << EOF
           mutation {
             pages {
@@ -150,7 +148,6 @@ jobs:
           EOF
           )
           echo "✅ GraphQL query prepared."
-          echo "::endgroup::"
 
           echo $GRAPHQL_QUERY
 
@@ -162,15 +159,13 @@ jobs:
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
-          echo "::group::🔧 Preparing JSON PAYLOAD..."
+          echo "🔧 Preparing JSON PAYLOAD..."
           JSON_PAYLOAD=$(jq -n --arg q "$GRAPHQL_QUERY" '{query: $q}')
           echo "✅ JSON PAYLOAD prepared."
-          echo "::endgroup::"
 
-          echo "::group::🚀 Sending request to Wiki.js API..."
+          echo "🚀 Sending request to Wiki.js API..."
           curl -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD" | jq
-          echo "::endgroup::"
 
