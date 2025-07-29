@@ -123,7 +123,7 @@ jobs:
           mutation {
             pages {
               update(
-                id: 27,
+                id: 28,
                 content: $new_content,
                 editor: "markdown",
                 isPrivate: false,
