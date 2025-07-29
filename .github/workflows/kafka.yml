@@ -1,4 +1,4 @@
-name: Update Tópicos Kafka Dev
+name: Kafka
 
 on:
   workflow_dispatch:
