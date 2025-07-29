@@ -46,6 +46,8 @@ jobs:
           echo "✅ CURL Fetch Done"
           
           CONTENT=$(echo "$RESPONSE" | jq -c '.data.pages.single.content')
+          CONTENT="${CONTENT//\"/ }"
+
           echo "✅ Content fetched: $CONTENT"
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
           echo "::endgroup::"
@@ -124,7 +126,7 @@ jobs:
             pages {
               update(
                 id: 28,
-                content: $new_content,
+                content: \"$new_content\",
                 editor: "markdown",
                 isPrivate: false,
                 isPublished: true,
