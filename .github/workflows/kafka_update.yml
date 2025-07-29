@@ -46,7 +46,7 @@ jobs:
           echo "✅ CURL Fetch Done"
           
           CONTENT=$(echo "$RESPONSE" | jq -c '.data.pages.single.content')
-          CONTENT="${CONTENT//\"/ }"
+          CONTENT="${CONTENT//\"/}"
 
           echo "✅ Content fetched: $CONTENT"
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
