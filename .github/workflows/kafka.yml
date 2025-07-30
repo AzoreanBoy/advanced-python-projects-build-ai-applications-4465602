@@ -158,14 +158,19 @@ jobs:
       - name: Upload Content to Wiki.js
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
+          GRAPHQL_QUERY: ${{ env.GRAPHQL_QUERY }} # Ensure GRAPHQL_QUERY is available
         run: |
-          echo "🔧 Preparing JSON PAYLOAD..."
+          echo "🔧 Preparing JSON PAYLOAD..."~
           JSON_PAYLOAD=$(jq -n --arg q "$GRAPHQL_QUERY" '{query: $q}')
           echo "✅ JSON PAYLOAD prepared."
 
+          echo "--- FINAL JSON PAYLOAD SENT TO WIKI.JS ---"
+          echo "$JSON_PAYLOAD" | od -c
+          echo "------------------------------------------"
+          # --- END NEW DEBUGGING STEP ---
+          
           echo "🚀 Sending request to Wiki.js API..."
           curl -X POST "https://wiki.franquinho.info/graphql" \
-            -H "Authorization: Bearer $WIKI_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "$JSON_PAYLOAD" | jq
-
+          -H "Authorization: Bearer $WIKI_API_TOKEN" \
+          -H "Content-Type: application/json" \
+          --data "$JSON_PAYLOAD" | jq
