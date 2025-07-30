@@ -45,7 +45,7 @@ jobs:
           
           echo "✅ CURL Fetch Done"
           
-          CONTENT=$(echo "$RESPONSE" | jq -r '.data.pages.single.content')
+          CONTENT=$(echo "$RESPONSE" | jq -c '.data.pages.single.content')
           CONTENT="${CONTENT//\"/}"
 
           echo "✅ Content fetched: $CONTENT"
