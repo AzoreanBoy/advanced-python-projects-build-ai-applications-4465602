@@ -182,11 +182,15 @@ jobs:
           GRAPHQL_VARIABLES: ${{ env.GRAPHQL_VARIABLES }}
         run: |
           echo "🔧 Preparing JSON PAYLOAD..."
-          #JSON_PAYLOAD=$(jq -n --arg q "$GRAPHQL_QUERY" '{query: $q}')
-          echo "✅ JSON PAYLOAD prepared."
+          JSON_PAYLOAD=$(jq -n \
+            --arg query "$GRAPHQL_QUERY" \
+            --argjson variables "$GRAPHQL_VARIABLES" \
+            '{query: $query, variables: $variables}')
+          
+            echo "✅ JSON PAYLOAD prepared."
 
           echo "🚀 Sending request to Wiki.js API..."
           curl -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"query\": \"$GRAPHQL_QUERY\", \"variables\": $GRAPHQL_VARIABLES}"
+            -d "$JSON_PAYLOAD"
