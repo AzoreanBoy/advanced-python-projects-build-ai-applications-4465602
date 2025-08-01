@@ -100,7 +100,7 @@ jobs:
           TAGS: ${{ env.TAGS }}
         run: |
           GRAPHQL_QUERY=$(cat << 'EOF'
-          mutation UpdatePage($id: String!, $content: String!, $tags: [String!]) {
+          mutation UpdatePage($id: Int!, $content: String!, $tags: [String!]) {
             pages {
               update(
                 id: $id,
