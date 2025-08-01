@@ -170,7 +170,7 @@ jobs:
           
           echo "📤 Send Query to GITHUB ENV"
           echo "GRAPHQL_QUERY=$(escape_for_github_env "$GRAPHQL_QUERY")" >> $GITHUB_ENV
-          echo "GRAPHQL_VARIABLES=$(escape_for_github_env "$VARIABLES")" >> $GITHUB_ENV
+          echo "GRAPHQL_VARIABLES=$VARIABLES" >> $GITHUB_ENV
 
           #echo "GRAPHQL_QUERY="$GRAPHQL_QUERY >> "$GITHUB_ENV"
           echo Done
