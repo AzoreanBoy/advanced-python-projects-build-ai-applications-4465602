@@ -9,12 +9,13 @@ jobs:
     environment: dev
     env:
       CONFIG_PATH: config.json
+
     steps:
       - name: Checkout repositório principal
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Get Content from Wiki
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
@@ -31,113 +32,91 @@ jobs:
           EOF
           )
 
-          echo $QUERY
-
-          echo "📤Fetching API"
-
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
-
 
           RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
-          
-          echo "✅ CURL Fetch Done"
-          
-          CONTENT=$(echo "$RESPONSE" | jq -r '.data.pages.single.content')
 
-          echo "✅ Content fetched: $CONTENT"
-          echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
-      
+          echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
+          echo "✅ Content saved to wiki_content.md"
+
       - name: Update Content
-        env:
-          CONTENT: ${{ env.CONTENT }}
         run: |
           CONFIG_FILE="${{ env.CONFIG_PATH }}"
-          echo "Lendo config de: $CONFIG_FILE"
-          
           topicName=$(jq -r '.metadata.topicName' "$CONFIG_FILE")
           topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
-
           link="https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/$topicName"
-
-          echo "Nome do Tópico: $topicName"
-          echo "Descrição do Tópico: $topicDescription"
-          
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
-          echo $update
 
-          new_content="${CONTENT}"$'\n'"${update}"
+          echo "🔧 New row: $update"
 
-          echo "⚠️⚠️⚠️NEW CONTENT:"
-          echo $new_content
+          # Add header if missing
+          if ! grep -q "| Tópico | Descrição | Link | Status |" wiki_content.md; then
+            echo -e "\n| Tópico | Descrição | Link | Status |\n|--------|-----------|------|--------|" >> wiki_content.md
+          fi
 
-          echo "📤 Send Content to GITHUB ENV"
-          echo "new_content="$new_content >> "$GITHUB_ENV"
-          echo Done
-      
+          # Check if already exists
+          if grep -q "| $topicName |" wiki_content.md; then
+            echo "⚠️ Tópico '$topicName' já existe. Pulando."
+          else
+            echo "$update" >> wiki_content.md
+            echo "✅ Linha adicionada."
+          fi
+
+          # Escape content for JSON
+          escaped_content=$(python3 -c "import json; print(json.dumps(open('wiki_content.md').read())[1:-1])")
+          echo "new_content=$escaped_content" >> $GITHUB_ENV
+
       - name: Fetch current tags from Wiki.js
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
         run: |
-          echo "🔍 Fetching current tags from Wiki.js..."
           QUERY=$(cat << EOF
           {         
             pages {
               single (id:27) {
-                id
-                title
-                tags{tag}
+                tags { tag }
               }
             }
           }
           EOF
           )
 
-          echo "Query: $QUERY"
-
-          echo "📤Fetching API"
-
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
-
 
           RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
-          
-          echo "✅ CURL Fetch Done"
-          
+
           TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
-          echo "✅ Tags fetched: $TAGS"
           echo "TAGS=$TAGS" >> "$GITHUB_ENV"
-      
-      - name: Create GRAPH_QUERY to Update WIKI Page
+
+      - name: Prepare GraphQL Payload
         env:
           new_content: ${{ env.new_content }}
+          TAGS: ${{ env.TAGS }}
         run: |
-          #escaped_content=$(printf '%s' "$new_content" | sed 's/\\/\\\\/g; s/"/\\"/g')
-
-          echo "🔧 Preparing GraphQL query..."
-          GRAPHQL_QUERY=$(cat << EOF
-          mutation UpdatePage(\$id: ID!, \$content: String!, \$tags: [String!]) {
+          GRAPHQL_QUERY=$(cat << 'EOF'
+          mutation UpdatePage($id: ID!, $content: String!, $tags: [String!]) {
             pages {
               update(
-                  id: \$id,
-                  content: \$content,
-                  editor: "markdown",
-                  isPrivate: false,
-                  isPublished: true,
-                  locale: "en",
-                  tags: \$tags
-                ) {
+                id: $id,
+                content: $content,
+                editor: "markdown",
+                isPrivate: false,
+                isPublished: true,
+                locale: "en",
+                tags: $tags
+              ) {
                 responseResult {
                   succeeded
                   slug
                   message
                 }
-                page{
+                page {
                   id
                   title
                   path
@@ -148,50 +127,30 @@ jobs:
           }
           EOF
           )
-          echo "✅ GraphQL query prepared."
 
-          echo "Variables"
           VARIABLES=$(jq -n \
-            --arg id "28" \
+            --arg id "27" \
             --arg content "$new_content" \
             --argjson tags "$TAGS" \
             '{id: ($id | tonumber), content: $content, tags: $tags}')
-          
-          echo "Variables Prepared"
 
-          echo $GRAPHQL_QUERY
-          echo $VARIABLES
-          
-          escape_for_github_env() {
-            echo "$1" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read())[1:-1])"
-            }
-
-          
-          echo "📤 Send Query to GITHUB ENV"
-          escaped_query=$(echo "$GRAPHQL_QUERY" | jq -Rs '.')
-          echo "GRAPHQL_QUERY=$escaped_query" >> "$GITHUB_ENV"
-          escaped_variables=$(echo "$VARIABLES" | jq -c '.')
-          echo "GRAPHQL_VARIABLES=$escaped_variables" >> $GITHUB_ENV
-
-          #echo "GRAPHQL_QUERY="$GRAPHQL_QUERY >> "$GITHUB_ENV"
-          echo Done
+          echo "$GRAPHQL_QUERY" > query.graphql
+          echo "$VARIABLES" > variables.json
 
       - name: Upload Content to Wiki.js
         env:
           WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
-          GRAPHQL_QUERY: ${{ env.GRAPHQL_QUERY }}
-          GRAPHQL_VARIABLES: ${{ env.GRAPHQL_VARIABLES }}
         run: |
-          echo "🔧 Preparing JSON PAYLOAD..."
-          JSON_PAYLOAD=$(jq -n \
-            --argjson  query "$GRAPHQL_QUERY" \
-            --argjson variables "$GRAPHQL_VARIABLES" \
-            '{query: $query, variables: $variables}')
-          
-            echo "✅ JSON PAYLOAD prepared."
+          echo "🚀 Uploading updated content to Wiki.js..."
 
-          echo "🚀 Sending request to Wiki.js API..."
+          JSON_PAYLOAD=$(jq -n \
+            --arg query "$(cat query.graphql)" \
+            --argjson variables "$(cat variables.json)" \
+            '{query: $query, variables: $variables}')
+
           curl -X POST "https://wiki.franquinho.info/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
+
+          echo "✅ Upload complete."
