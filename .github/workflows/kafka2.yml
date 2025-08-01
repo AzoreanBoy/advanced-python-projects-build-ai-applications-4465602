@@ -45,8 +45,7 @@ jobs:
           
           echo "✅ CURL Fetch Done"
           
-          CONTENT=$(echo "$RESPONSE" | jq -c '.data.pages.single.content')
-          CONTENT="${CONTENT//\"/}"
+          CONTENT=$(echo "$RESPONSE" | jq -r '.data.pages.single.content')
 
           echo "✅ Content fetched: $CONTENT"
           echo "CONTENT=$CONTENT" >> "$GITHUB_ENV"
@@ -69,7 +68,7 @@ jobs:
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
           echo $update
 
-          new_content="${CONTENT}\\n${update}"
+          new_content="${CONTENT}"$'\n'"${update}"
 
           echo "⚠️⚠️⚠️NEW CONTENT:"
           echo $new_content
@@ -170,7 +169,8 @@ jobs:
           
           echo "📤 Send Query to GITHUB ENV"
           echo "GRAPHQL_QUERY=$(escape_for_github_env "$GRAPHQL_QUERY")" >> $GITHUB_ENV
-          echo "GRAPHQL_VARIABLES=$VARIABLES" >> $GITHUB_ENV
+          escaped_variables=$(echo "$VARIABLES" | jq -c '.')
+          echo "GRAPHQL_VARIABLES=$escaped_variables" >> $GITHUB_ENV
 
           #echo "GRAPHQL_QUERY="$GRAPHQL_QUERY >> "$GITHUB_ENV"
           echo Done
