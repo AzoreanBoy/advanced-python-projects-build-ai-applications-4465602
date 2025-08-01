@@ -168,7 +168,8 @@ jobs:
 
           
           echo "📤 Send Query to GITHUB ENV"
-          echo "GRAPHQL_QUERY=$(escape_for_github_env "$GRAPHQL_QUERY")" >> $GITHUB_ENV
+          escaped_query=$(echo "$GRAPHQL_QUERY" | jq -Rs '.')
+          echo "GRAPHQL_QUERY=$escaped_query" >> "$GITHUB_ENV"
           escaped_variables=$(echo "$VARIABLES" | jq -c '.')
           echo "GRAPHQL_VARIABLES=$escaped_variables" >> $GITHUB_ENV
 
@@ -183,7 +184,7 @@ jobs:
         run: |
           echo "🔧 Preparing JSON PAYLOAD..."
           JSON_PAYLOAD=$(jq -n \
-            --arg query "$GRAPHQL_QUERY" \
+            --argjson  query "$GRAPHQL_QUERY" \
             --argjson variables "$GRAPHQL_VARIABLES" \
             '{query: $query, variables: $variables}')
           
