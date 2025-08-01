@@ -118,7 +118,7 @@ jobs:
         env:
           new_content: ${{ env.new_content }}
         run: |
-          escaped_content=$(printf '%s' "$new_content" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          #escaped_content=$(printf '%s' "$new_content" | sed 's/\\/\\\\/g; s/"/\\"/g')
 
           echo "🔧 Preparing GraphQL query..."
           GRAPHQL_QUERY=$(cat << EOF
