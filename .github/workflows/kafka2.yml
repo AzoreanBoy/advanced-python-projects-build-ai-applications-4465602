@@ -69,7 +69,7 @@ jobs:
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
           echo $update
 
-          new_content=$CONTENT"\n"$update
+          new_content="${CONTENT}\\n${update}"
 
           echo "⚠️⚠️⚠️NEW CONTENT:"
           echo $new_content
