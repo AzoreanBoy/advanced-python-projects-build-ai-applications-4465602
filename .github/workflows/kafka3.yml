@@ -85,7 +85,7 @@ jobs:
             tail_content=$(sed -n "$((end_line + 1)),$total_lines p" wiki_content_clean.md)
 
             # Extrair só as linhas da tabela sem header e separador
-            table_rows=$(echo "$table_content" | tail -n +3)
+            table_rows=$(echo "$table_content" | grep -vF "$table_header" | grep -vF "$table_separator")
 
             # Verifica se tópico já existe na tabela
             if echo "$table_rows" | grep -Fq "| $topicName |"; then
