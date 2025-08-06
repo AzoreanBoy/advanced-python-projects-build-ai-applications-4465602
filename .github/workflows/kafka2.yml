@@ -100,6 +100,8 @@ jobs:
         env:
           TAGS: ${{ env.TAGS }}
         run: |
+          echo "🛠 Preparing GraphQL payload..."
+
           GRAPHQL_QUERY=$(cat << 'EOF'
           mutation UpdatePage($id: Int!, $content: String!, $tags: [String!]) {
             pages {
@@ -129,18 +131,19 @@ jobs:
           EOF
           )
 
-          # Read content safely and encode it as a proper JSON string
-          RAW_CONTENT=$(<content_to_upload.md)
-          CONTENT=$(jq -Rs . <<< "$RAW_CONTENT")
+          # Read wiki content safely
+          RAW_CONTENT=$(cat content_to_upload.md)
 
+          # Build JSON variables block with jq and proper escaping
           VARIABLES=$(jq -n \
-            --arg id "28" \
-            --arg content "$CONTENT" \
+            --arg id "27" \
+            --arg content "$RAW_CONTENT" \
             --argjson tags "$TAGS" \
             '{id: ($id | tonumber), content: $content, tags: $tags}')
 
           echo "$GRAPHQL_QUERY" > query.graphql
           echo "$VARIABLES" > variables.json
+
 
       - name: Upload Content to Wiki.js
         env:
