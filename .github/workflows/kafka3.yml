@@ -55,20 +55,23 @@ jobs:
           table_header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
           table_separator="|--|--|--|--|"
 
-          # Remove BOM da primeira linha e salva em arquivo temporário
+          # Remove BOM da primeira linha do ficheiro
           sed '1s/^\xEF\xBB\xBF//' wiki_content.md > wiki_content_clean.md
+
+          # Remove BOM e espaços invisíveis do header declarado
+          table_header=$(echo "$table_header" | sed 's/^[[:space:]]*//' | tr -d '\r' | tr -d '\xEF\xBB\xBF')
 
           # Verifica se a tabela existe
           if ! grep -Fq "$table_header" wiki_content_clean.md; then
             echo "⚠️ Tabela não encontrada. Adicionando tabela no final do arquivo."
             echo -e "\n$table_header\n$table_separator\n$update" >> wiki_content_clean.md
           else
-            start_line=$(grep -nF "$table_header" wiki_content_clean.md | cut -d: -f1)
+            start_line=$(grep -nF "$table_header" wiki_content_clean.md | cut -d: -f1 | head -n1)
             sep_line=$((start_line + 1))
             total_lines=$(wc -l < wiki_content_clean.md)
             end_line=$sep_line
 
-            # Encontrar o final da tabela (linhas que começam com pipe '|')
+            # Encontrar o fim da tabela (linhas que começam com pipe '|')
             while [ $end_line -lt $total_lines ]; do
               next_line=$((end_line + 1))
               line_content=$(sed -n "${next_line}p" wiki_content_clean.md)
@@ -79,25 +82,27 @@ jobs:
               fi
             done
 
-            # Separar arquivo em cabeçalho, tabela e resto
+            # Separar conteúdo
             head_content=$(sed -n "1,$((start_line - 1))p" wiki_content_clean.md)
             table_content=$(sed -n "$start_line,$end_line p" wiki_content_clean.md)
             tail_content=$(sed -n "$((end_line + 1)),$total_lines p" wiki_content_clean.md)
 
-           # Remove linhas de cabeçalho e separador da tabela para evitar duplicação
-           table_rows=$(echo "$table_content" | grep -vF "$table_header" | grep -vF "$table_separator")
+            echo "🔍 Número de vezes que o cabeçalho aparece:"
+            grep -Fn "$table_header" wiki_content_clean.md || true
 
-           # Checa se o tópico já existe
-           if echo "$table_rows" | grep -Fq "| $topicName |"; then
-             echo "⚠️ Tópico '$topicName' já existe na tabela. Nenhuma alteração feita."
-           else
-             echo "✅ Tópico não encontrado. Adicionando à tabela e ordenando."
-             table_rows=$(echo -e "$table_rows\n$update")
-             table_rows=$(echo "$table_rows" | sort -t'|' -k2,2)
-           fi
+            # Remover qualquer cabeçalho duplicado da tabela (por segurança)
+            table_rows=$(echo "$table_content" | awk '!/^| Nome do Tópico / && !/^|--/')
 
+            # Verifica se já existe o tópico
+            if echo "$table_rows" | grep -Fq "| $topicName |"; then
+              echo "⚠️ Tópico '$topicName' já existe na tabela. Nenhuma alteração feita."
+            else
+              echo "✅ Tópico não encontrado. Adicionando à tabela e ordenando."
+              table_rows=$(echo -e "$table_rows\n$update")
+              table_rows=$(echo "$table_rows" | sort -t'|' -k2,2)
+            fi
 
-            # Recria o arquivo completo com a tabela atualizada
+            # Recria o conteúdo atualizado
             {
               echo "$head_content"
               echo "$table_header"
@@ -107,15 +112,14 @@ jobs:
             } > wiki_content_clean.md
           fi
 
-          # Substitui arquivo original
+          # Substitui o ficheiro original
           mv wiki_content_clean.md wiki_content.md
 
           # Prepara para upload
           cp wiki_content.md content_to_upload.md
           
-          echo "⚠️⚠️⚠️ DEbug Contnet to update"
+          echo "⚠️⚠️⚠️ Conteúdo final preparado para upload (primeiras 30 linhas):"
           head -30 content_to_upload.md | cat -n
-
 
       - name: Fetch current tags from Wiki.js
         env:
