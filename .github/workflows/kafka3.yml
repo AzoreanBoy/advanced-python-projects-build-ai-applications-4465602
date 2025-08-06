@@ -50,44 +50,77 @@ jobs:
           link="https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/$topicName"
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
 
-          echo "🔧 New row: $update"
+          echo "🔧 Nova linha: $update"
 
-          # Ensure table exists with correct header
-          if ! grep -q '| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |' wiki_content.md; then
-            echo "⚠️ Tabela não encontrada. Criando nova tabela."
-            echo -e "| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |\n|--|--|--|--|\n$update" > wiki_content.md
+          # Define o cabeçalho e separador da tabela exatamente
+          table_header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
+          table_separator="|--|--|--|--|"
+
+          # Checa se o arquivo tem a tabela (pela linha do cabeçalho exato)
+          if ! grep -Fq "$table_header" wiki_content.md; then
+            echo "⚠️ Tabela não encontrada. Adicionando tabela no final do arquivo."
+
+            # Acrescenta a tabela no final, com cabeçalho, separador e a nova linha
+            echo -e "\n$table_header\n$table_separator\n$update" >> wiki_content.md
+
           else
-            # Check if topic already exists
-            if grep -q "| $topicName |" wiki_content.md; then
-              echo "⚠️ Tópico '$topicName' já existe. Pulando."
+            # Extrai o conteúdo antes da tabela, a tabela em si, e depois do fim da tabela
+
+            # Obtem o número da linha onde a tabela começa (cabeçalho)
+            start_line=$(grep -nF "$table_header" wiki_content.md | cut -d: -f1)
+            # Obtem o número da linha onde o separador da tabela está (linha após o cabeçalho)
+            sep_line=$((start_line + 1))
+
+            # Agora vamos identificar onde a tabela termina (última linha contínua que começa com | após o cabeçalho e separador)
+            total_lines=$(wc -l < wiki_content.md)
+            end_line=$sep_line
+
+            while [ $end_line -lt $total_lines ]; do
+              next_line=$((end_line + 1))
+              line_content=$(sed -n "${next_line}p" wiki_content.md)
+              if [[ "$line_content" =~ ^\| ]]; then
+                end_line=$next_line
+              else
+                break
+              fi
+            done
+
+            # Extrai partes do arquivo
+            head_content=$(sed -n "1,$((start_line - 1))p" wiki_content.md)
+            table_content=$(sed -n "$start_line,$end_line p" wiki_content.md)
+            tail_content=$(sed -n "$((end_line + 1)),${total_lines}p" wiki_content.md)
+
+            # Remove cabeçalho e separador para manipular só as linhas da tabela
+            table_rows=$(echo "$table_content" | tail -n +3)
+
+            # Verifica se o tópico já está presente na tabela
+            if echo "$table_rows" | grep -Fq "| $topicName |"; then
+              echo "⚠️ Tópico '$topicName' já existe na tabela. Nenhuma alteração feita."
             else
-              # Append new row at end
-              echo "$update" >> wiki_content.md
-              echo "✅ Linha adicionada."
+              echo "✅ Tópico não encontrado. Adicionando à tabela e ordenando."
 
-              # Sort the table alphabetically by the first column (topic name)
-              awk '
-                BEGIN { header=""; sep=""; in_table=0 }
-                /^| Nome do Tópico | Descrição | Detalhes\/Link Documentação | Estado |/ {
-                  header=$0; in_table=1; next
-                }
-                /^|--|--|--|--|/ { sep=$0; next }
-                in_table && /^\|/ { rows[++i]=$0; next }
-                { print }
-                END {
-                  print header
-                  print sep
-                  n=asort(rows, sorted_rows)
-                  for (j=1; j<=n; j++) print sorted_rows[j]
-                }
-              ' wiki_content.md > tmp.md && mv tmp.md wiki_content.md
+              # Acrescenta a nova linha
+              table_rows=$(echo -e "$table_rows\n$update")
 
-              echo "✅ Tabela ordenada alfabeticamente."
+              # Ordena linhas alfabeticamente pelo campo do tópico (campo 2 depois do pipe)
+              table_rows=$(echo "$table_rows" | sort -t'|' -k2,2)
+
             fi
+
+            # Reconstrói o arquivo completo
+            {
+              echo "$head_content"
+              echo "$table_header"
+              echo "$table_separator"
+              echo "$table_rows"
+              echo "$tail_content"
+            } > wiki_content.md
+
           fi
 
-          # Save raw content
+          # Copia para arquivo final que será enviado ao Wiki.js
           cp wiki_content.md content_to_upload.md
+
           
           echo "⚠️⚠️⚠️ DEbug Contnet to update"
           head -30 content_to_upload.md | cat -n
