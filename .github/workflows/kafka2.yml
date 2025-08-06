@@ -66,8 +66,9 @@ jobs:
           fi
 
           # Escape content for JSON
-          escaped_content=$(awk '{printf "%s\\n", $0}' wiki_content.md)
+          escaped_content=$(sed 's/"/\\"/g' wiki_content.md | awk '{printf "%s\n", $0}')
           echo "new_content=$escaped_content" >> $GITHUB_ENV
+
 
 
       - name: Fetch current tags from Wiki.js
