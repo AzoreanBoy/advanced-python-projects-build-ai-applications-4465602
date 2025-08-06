@@ -52,22 +52,43 @@ jobs:
 
           echo "🔧 New row: $update"
 
-          # Add header if missing
-          if ! grep -q "| Tópico | Descrição | Link | Status |" wiki_content.md; then
-            echo -e "\n| Tópico | Descrição | Link | Status |\n|--------|-----------|------|--------|" >> wiki_content.md
-          fi
-
-          # Check if already exists
-          if grep -q "| $topicName |" wiki_content.md; then
-            echo "⚠️ Tópico '$topicName' já existe. Pulando."
+          # Ensure table exists
+          if ! grep -q '| Tópico | Descrição | Link | Status |' wiki_content.md; then
+            echo "⚠️ Tabela não encontrada. Criando nova tabela."
+            echo -e "| Tópico | Descrição | Link | Status |\n|--------|-----------|------|--------|\n$update" > wiki_content.md
           else
-            echo "$update" >> wiki_content.md
-            echo "✅ Linha adicionada."
+            # Check if topic already exists
+            if grep -q "| $topicName |" wiki_content.md; then
+              echo "⚠️ Tópico '$topicName' já existe. Pulando."
+            else
+              # Append new row at end
+              echo "$update" >> wiki_content.md
+              echo "✅ Linha adicionada."
+
+              # Sort the table alphabetically by the first column (topic name)
+              awk '
+                BEGIN { header = ""; sep = ""; in_table = 0 }
+                /^| Tópico | Descrição | Link | Status |/ { header = $0; in_table = 1; next }
+                /^|[-]+|[-]+|[-]+|[-]+|/ { sep = $0; next }
+                in_table && /^\|/ { rows[++i] = $0; next }
+                { print }  # print anything outside the table
+                END {
+                  print header
+                  print sep
+                  n = asort(rows, sorted_rows)
+                  for (j = 1; j <= n; j++) {
+                    print sorted_rows[j]
+                  }
+                }
+              ' wiki_content.md > tmp.md && mv tmp.md wiki_content.md
+
+              echo "✅ Tabela ordenada alfabeticamente."
+            fi
           fi
 
-          # Escape content for JSON
-          escaped_content=$(sed 's/"/\\"/g' wiki_content.md | awk '{printf "%s\n", $0}')
+          # Save raw content
           cp wiki_content.md content_to_upload.md
+
 
 
 
