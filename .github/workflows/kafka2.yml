@@ -67,7 +67,7 @@ jobs:
 
           # Escape content for JSON
           escaped_content=$(sed 's/"/\\"/g' wiki_content.md | awk '{printf "%s\n", $0}')
-          echo "new_content=$escaped_content" >> $GITHUB_ENV
+          cp wiki_content.md content_to_upload.md
 
 
 
@@ -98,7 +98,6 @@ jobs:
 
       - name: Prepare GraphQL Payload
         env:
-          new_content: ${{ env.new_content }}
           TAGS: ${{ env.TAGS }}
         run: |
           GRAPHQL_QUERY=$(cat << 'EOF'
@@ -130,9 +129,13 @@ jobs:
           EOF
           )
 
+          # Read content safely and encode it as a proper JSON string
+          RAW_CONTENT=$(<content_to_upload.md)
+          CONTENT=$(jq -Rs . <<< "$RAW_CONTENT")
+
           VARIABLES=$(jq -n \
             --arg id "28" \
-            --arg content "$new_content" \
+            --arg content "$CONTENT" \
             --argjson tags "$TAGS" \
             '{id: ($id | tonumber), content: $content, tags: $tags}')
 
