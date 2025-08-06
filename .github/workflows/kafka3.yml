@@ -52,57 +52,55 @@ jobs:
 
           echo "🔧 New row: $update"
 
-          table_header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
+          table_header_raw="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
           table_separator="|--|--|--|--|"
 
-          # Remove BOM da primeira linha do ficheiro
-          sed '1s/^\xEF\xBB\xBF//' wiki_content.md > wiki_content_clean.md
+          # Remove BOM e espaços invisíveis do conteúdo da Wiki
+          sed '1s/^\xEF\xBB\xBF//' wiki_content.md | tr -d '\r' > wiki_content_clean.md
 
-          # Remove BOM e espaços invisíveis do header declarado
-          table_header=$(echo "$table_header" | sed 's/^[[:space:]]*//' | tr -d '\r' | tr -d '\xEF\xBB\xBF')
+          # Normaliza o cabeçalho para comparação
+          table_header=$(echo "$table_header_raw" | sed 's/^[[:space:]]*//g' | tr -d '\r' | tr -d '\xEF\xBB\xBF')
 
-          # Verifica se a tabela existe
-          if ! grep -Fq "$table_header" wiki_content_clean.md; then
-            echo "⚠️ Tabela não encontrada. Adicionando tabela no final do arquivo."
+          # Procura a linha exata do cabeçalho
+          start_line=$(grep -Fn "$table_header" wiki_content_clean.md | cut -d: -f1 | head -n1 || true)
+
+          if [ -z "$start_line" ]; then
+            echo "⚠️ Cabeçalho da tabela NÃO encontrado. Criando nova tabela no final."
             echo -e "\n$table_header\n$table_separator\n$update" >> wiki_content_clean.md
           else
-            start_line=$(grep -nF "$table_header" wiki_content_clean.md | cut -d: -f1 | head -n1)
+            echo "✅ Cabeçalho encontrado na linha $start_line"
+
             sep_line=$((start_line + 1))
             total_lines=$(wc -l < wiki_content_clean.md)
             end_line=$sep_line
 
-            # Encontrar o fim da tabela (linhas que começam com pipe '|')
+            # Detecta fim da tabela
             while [ $end_line -lt $total_lines ]; do
               next_line=$((end_line + 1))
-              line_content=$(sed -n "${next_line}p" wiki_content_clean.md)
-              if [[ "$line_content" =~ ^\| ]]; then
+              line=$(sed -n "${next_line}p" wiki_content_clean.md)
+              if [[ "$line" =~ ^\| ]]; then
                 end_line=$next_line
               else
                 break
               fi
             done
 
-            # Separar conteúdo
+            # Divide conteúdo em partes
             head_content=$(sed -n "1,$((start_line - 1))p" wiki_content_clean.md)
             table_content=$(sed -n "$start_line,$end_line p" wiki_content_clean.md)
             tail_content=$(sed -n "$((end_line + 1)),$total_lines p" wiki_content_clean.md)
 
-            echo "🔍 Número de vezes que o cabeçalho aparece:"
-            grep -Fn "$table_header" wiki_content_clean.md || true
-
-            # Remover qualquer cabeçalho duplicado da tabela (por segurança)
+            # Remove cabeçalhos repetidos da tabela
             table_rows=$(echo "$table_content" | awk '!/^| Nome do Tópico / && !/^|--/')
 
-            # Verifica se já existe o tópico
             if echo "$table_rows" | grep -Fq "| $topicName |"; then
-              echo "⚠️ Tópico '$topicName' já existe na tabela. Nenhuma alteração feita."
+              echo "⚠️ Tópico '$topicName' já existe. Não será adicionado."
             else
-              echo "✅ Tópico não encontrado. Adicionando à tabela e ordenando."
+              echo "✅ Tópico não encontrado. Adicionando à tabela."
               table_rows=$(echo -e "$table_rows\n$update")
               table_rows=$(echo "$table_rows" | sort -t'|' -k2,2)
             fi
 
-            # Recria o conteúdo atualizado
             {
               echo "$head_content"
               echo "$table_header"
@@ -112,14 +110,12 @@ jobs:
             } > wiki_content_clean.md
           fi
 
-          # Substitui o ficheiro original
           mv wiki_content_clean.md wiki_content.md
-
-          # Prepara para upload
           cp wiki_content.md content_to_upload.md
-          
-          echo "⚠️⚠️⚠️ Conteúdo final preparado para upload (primeiras 30 linhas):"
+
+          echo "⚠️ Primeiras linhas do conteúdo final:"
           head -30 content_to_upload.md | cat -n
+
 
       - name: Fetch current tags from Wiki.js
         env:
