@@ -131,7 +131,7 @@ jobs:
           )
 
           VARIABLES=$(jq -n \
-            --arg id "27" \
+            --arg id "28" \
             --arg content "$new_content" \
             --argjson tags "$TAGS" \
             '{id: ($id | tonumber), content: $content, tags: $tags}')
