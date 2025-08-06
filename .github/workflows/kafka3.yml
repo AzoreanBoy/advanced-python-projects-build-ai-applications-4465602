@@ -53,7 +53,7 @@ jobs:
           echo "🔧 New row: $update"
 
           # Detect table header line more flexibly (ignore spaces)
-          if ! grep -qE '^\|\s*Tópico\s*\|\s*Descrição\s*\|\s*Link\s*\|\s*Status\s*\|' wiki_content.md; then
+          if ! grep -qP '^\|\s*Tópico\s*\|\s*Descrição\s*\|\s*Link\s*\|\s*Status\s*\|' wiki_content.md; then
             echo "⚠️ Tabela não encontrada. Criando nova tabela."
             echo -e "| Tópico | Descrição | Link | Status |\n|--------|-----------|------|--------|\n$update" > wiki_content.md
           else
