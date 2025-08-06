@@ -136,7 +136,7 @@ jobs:
 
           # Build JSON variables block with jq and proper escaping
           VARIABLES=$(jq -n \
-            --arg id "27" \
+            --arg id "28" \
             --arg content "$RAW_CONTENT" \
             --argjson tags "$TAGS" \
             '{id: ($id | tonumber), content: $content, tags: $tags}')
