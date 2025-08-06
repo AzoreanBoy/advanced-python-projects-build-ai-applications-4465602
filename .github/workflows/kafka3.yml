@@ -52,60 +52,65 @@ jobs:
 
           echo "🔧 New row: $update"
 
-          # Ensure table exists
-          if ! grep -q '| Tópico | Descrição | Link | Status |' wiki_content.md; then
+          # Detect table header line more flexibly (ignore spaces)
+          if ! grep -qE '^\|\s*Tópico\s*\|\s*Descrição\s*\|\s*Link\s*\|\s*Status\s*\|' wiki_content.md; then
             echo "⚠️ Tabela não encontrada. Criando nova tabela."
             echo -e "| Tópico | Descrição | Link | Status |\n|--------|-----------|------|--------|\n$update" > wiki_content.md
           else
-            # Check if topic already exists
+            # Check if topic already exists in the table
             if grep -q "| $topicName |" wiki_content.md; then
               echo "⚠️ Tópico '$topicName' já existe. Pulando."
             else
               # Append new row
               echo "$update" >> wiki_content.md
               echo "✅ Linha adicionada."
+
+              # Sort table alphabetically by 'Tópico' column (1st column)
+              awk '
+                BEGIN {
+                  header = ""; separator = ""; in_table = 0; row_count = 0;
+                }
+                /^\|\s*Tópico\s*\|\s*Descrição\s*\|\s*Link\s*\|\s*Status\s*\|/ {
+                  header = $0;
+                  in_table = 1;
+                  next;
+                }
+                in_table && /^\|[-| ]+\|$/ {
+                  separator = $0;
+                  next;
+                }
+                in_table && /^\|/ {
+                  rows[++row_count] = $0;
+                  next;
+                }
+                {
+                  print;
+                }
+                END {
+                  if (in_table) {
+                    print header;
+                    print separator;
+                    n = asort(rows, sorted_rows, cmp);
+                    for (i = 1; i <= n; i++) {
+                      print sorted_rows[i];
+                    }
+                  }
+                }
+                function cmp(i1, v1, i2, v2) {
+                  # Extract first column (topicName) for comparison
+                  gsub(/^\|\s*/, "", v1);
+                  sub(/\s*\|.*$/, "", v1);
+                  gsub(/^\|\s*/, "", v2);
+                  sub(/\s*\|.*$/, "", v2);
+                  return (v1 < v2) ? -1 : (v1 > v2);
+                }
+              ' wiki_content.md > tmp.md && mv tmp.md wiki_content.md
+
+              echo "✅ Tabela ordenada alfabeticamente."
             fi
           fi
 
-          # Sort the Kafka table alphabetically
-          awk '
-            BEGIN { in_table = 0; row_count = 0 }
-
-            # Table header
-            /^\| Tópico \| Descrição \| Link \| Status \|/ {
-              print; in_table = 1; next
-            }
-
-            # Separator
-            in_table && /^\|[-]+/ {
-              print; next
-            }
-
-            # Table rows
-            in_table && /^\|/ {
-              rows[row_count++] = $0; next
-            }
-
-            # End of table or outside
-            !in_table || !/^\|/ {
-              if (in_table && row_count > 0) {
-                n = asort(rows, sorted_rows)
-                for (i = 0; i < n; i++) print sorted_rows[i]
-                in_table = 0
-              }
-              print
-            }
-
-            END {
-              if (in_table && row_count > 0) {
-                n = asort(rows, sorted_rows)
-                for (i = 0; i < n; i++) print sorted_rows[i]
-              }
-            }
-          ' wiki_content.md > tmp.md && mv tmp.md wiki_content.md
-
-          echo "✅ Tabela ordenada alfabeticamente."
-
+          # Save raw content for next step
           cp wiki_content.md content_to_upload.md
 
       - name: Fetch current tags from Wiki.js
