@@ -44,6 +44,9 @@ jobs:
 
       - name: Update Content
         run: |
+          echo "🔍 Debug - primeiras linhas de wiki_content.md:"
+          head -30 wiki_content.md | cat -n
+
           CONFIG_FILE="${{ env.CONFIG_PATH }}"
           topicName=$(jq -r '.metadata.topicName' "$CONFIG_FILE")
           topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
