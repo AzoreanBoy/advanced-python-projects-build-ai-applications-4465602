@@ -66,8 +66,9 @@ jobs:
           fi
 
           # Escape content for JSON
-          escaped_content=$(python3 -c "import json; print(json.dumps(open('wiki_content.md').read())[1:-1])")
+          escaped_content=$(awk '{printf "%s\\n", $0}' wiki_content.md)
           echo "new_content=$escaped_content" >> $GITHUB_ENV
+
 
       - name: Fetch current tags from Wiki.js
         env:
