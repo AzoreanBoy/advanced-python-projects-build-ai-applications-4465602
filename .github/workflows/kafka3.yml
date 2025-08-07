@@ -42,6 +42,9 @@ jobs:
           echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
           echo "✅ Content saved to wiki_content.md"
 
+          echo "📄 Primeiras linhas do conteúdo Inicial:"
+          head -30 wiki_content.md | cat -n
+
       - name: Update Content
         run: |
           CONFIG_FILE="${{ env.CONFIG_PATH }}"
