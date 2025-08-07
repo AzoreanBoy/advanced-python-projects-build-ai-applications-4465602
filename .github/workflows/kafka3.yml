@@ -86,7 +86,7 @@ jobs:
             echo "⚠️ Tópico '$topicName' já existe. Nenhuma alteração feita."
           else
             echo "✅ Tópico novo. A adicionar..."
-            table_rows=$(echo -e "$table_rows\n$update" | sort -t'|' -k2,2)
+            table_rows=$(echo -e "$table_rows\n$update" | sort -f -t'|' -k2,2)
           fi
 
           # Recriar ficheiro
