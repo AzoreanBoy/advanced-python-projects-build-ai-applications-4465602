@@ -53,52 +53,43 @@ jobs:
           link="https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/$topicName"
           update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
 
-          echo "🔧 Nova linha: $update"
+          table_header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
+          table_separator="|--|--|--|--|"
 
-          header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
-          separator="|--|--|--|--|"
+          # Limpar BOM
+          sed '1s/^\xEF\xBB\xBF//' wiki_content.md > wiki_content_clean.md
 
-          # Remove BOM e normaliza o ficheiro
-          sed '1s/^\xEF\xBB\xBF//' wiki_content.md | tr -d '\r' > wiki_content_clean.md
-
-          # Encontra a linha do cabeçalho da tabela
-          start_line=$(grep -Fn "$header" wiki_content_clean.md | cut -d: -f1 | head -n1)
-          if [ -z "$start_line" ]; then
-            echo "❌ Erro: Cabeçalho da tabela não encontrado!"
-            exit 1
-          fi
-
+          # Localizar linhas da tabela
+          start_line=$(grep -nF "$table_header" wiki_content_clean.md | cut -d: -f1 | head -n1)
           sep_line=$((start_line + 1))
           total_lines=$(wc -l < wiki_content_clean.md)
           end_line=$sep_line
 
-          # Percorre até ao fim da tabela
+          # Encontrar o fim da tabela
           while [ $end_line -lt $total_lines ]; do
             next_line=$((end_line + 1))
-            line=$(sed -n "${next_line}p" wiki_content_clean.md)
-            if [[ "$line" =~ ^\| ]]; then
+            line_content=$(sed -n "${next_line}p" wiki_content_clean.md)
+            if [[ "$line_content" =~ ^\| ]]; then
               end_line=$next_line
             else
               break
             fi
           done
 
-          # Divide o conteúdo
+          # Extrair partes
           head_content=$(sed -n "1,$((start_line - 1))p" wiki_content_clean.md)
-          table_header=$(sed -n "$start_line p" wiki_content_clean.md)
-          table_separator=$(sed -n "$sep_line p" wiki_content_clean.md)
           table_rows=$(sed -n "$((sep_line + 1)),$end_line p" wiki_content_clean.md)
           tail_content=$(sed -n "$((end_line + 1)),$total_lines p" wiki_content_clean.md)
 
-          # Verifica se já existe
+          # Verificar se tópico já existe
           if echo "$table_rows" | grep -Fq "| $topicName |"; then
-            echo "⚠️ Tópico '$topicName' já existe na tabela. Nenhuma alteração feita."
+            echo "⚠️ Tópico '$topicName' já existe. Nenhuma alteração feita."
           else
-            echo "✅ Tópico não encontrado. Adicionando e ordenando."
+            echo "✅ Tópico novo. A adicionar..."
             table_rows=$(echo -e "$table_rows\n$update" | sort -t'|' -k2,2)
           fi
 
-          # Recria o ficheiro completo
+          # Recriar ficheiro
           {
             echo "$head_content"
             echo "$table_header"
@@ -108,8 +99,7 @@ jobs:
           } > wiki_content.md
 
           cp wiki_content.md content_to_upload.md
-
-          echo "📄 Primeiras linhas do conteúdo final:"
+          echo "📄 Ficheiro final:"
           head -30 content_to_upload.md | cat -n
 
 
