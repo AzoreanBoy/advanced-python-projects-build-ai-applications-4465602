@@ -91,7 +91,6 @@ jobs:
 
           # Recriar ficheiro
           {
-            echo "$head_content"
             echo "$table_header"
             echo "$table_separator"
             echo "$table_rows"
