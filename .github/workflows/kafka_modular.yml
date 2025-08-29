@@ -1,4 +1,4 @@
-name: Kafka3
+name: Kafka Modular
 
 on:
   workflow_dispatch:
