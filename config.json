@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "topicName" : "mob.bbb.topicName",
-        "topicDescription" : "Exemplo de topicDescription"
+        "topicName" : "c3po.teste.topicName",
+        "topicDescription" : "Descrição do Tópico Kafka C-3PO"
     }
 }
