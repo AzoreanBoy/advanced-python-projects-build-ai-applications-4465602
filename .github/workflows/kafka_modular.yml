@@ -1,0 +1,187 @@
+name: Kafka3
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-topicos-kafka:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      CONFIG_PATH: config.json
+      WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
+      WIKI_KAFKA_PAGE_ID: ${{ vars.WIKI_PAGE_ID_KAFKA}}
+
+    steps:
+      - name: Checkout repositório principal
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Content from Wiki
+        run: |
+          echo "🔍 Fetching content from Wiki.js..."
+          QUERY=$(cat << EOF
+          {         
+            pages {
+              single (id:$WIKI_KAFKA_PAGE_ID) {
+                content
+              }
+            }
+          }
+          EOF
+          )
+
+          JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
+
+          RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
+            -H "Authorization: Bearer $WIKI_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$JSON_PAYLOAD")
+
+          echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
+          echo "✅ Content saved to wiki_content.md"
+
+          echo "📄 Primeiras linhas do conteúdo Inicial:"
+          head -30 wiki_content.md | cat -n
+
+      - name: Update Content
+        run: |
+          CONFIG_FILE="${{ env.CONFIG_PATH }}"
+          topicName=$(jq -r '.metadata.topicName' "$CONFIG_FILE")
+          topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
+          link="https://dev.azure.com/CTTPortugal/Technology/_git/pt.technology.kafka.documentation?path=/$topicName"
+          update="| $topicName | $topicDescription | [Link]($link) | Ativo |"
+
+          table_header="| Nome do Tópico | Descrição | Detalhes/Link Documentação | Estado |"
+          table_separator="|--|--|--|--|"
+
+          # Limpar BOM
+          sed '1s/^\xEF\xBB\xBF//' wiki_content.md > wiki_content_clean.md
+
+          # Localizar linhas da tabela
+          start_line=$(grep -nF "$table_header" wiki_content_clean.md | cut -d: -f1 | head -n1)
+          sep_line=$((start_line + 1))
+          total_lines=$(wc -l < wiki_content_clean.md)
+          end_line=$sep_line
+
+          # Encontrar o fim da tabela
+          while [ $end_line -lt $total_lines ]; do
+            next_line=$((end_line + 1))
+            line_content=$(sed -n "${next_line}p" wiki_content_clean.md)
+            if [[ "$line_content" =~ ^\| ]]; then
+              end_line=$next_line
+            else
+              break
+            fi
+          done
+
+          # Extrair partes
+          head_content=$(sed -n "1,$((start_line - 1))p" wiki_content_clean.md)
+          table_rows=$(sed -n "$((sep_line + 1)),$end_line p" wiki_content_clean.md)
+          tail_content=$(sed -n "$((end_line + 1)),$total_lines p" wiki_content_clean.md)
+
+          # Verificar se tópico já existe
+          if echo "$table_rows" | grep -Fq "| $topicName |"; then
+            echo "⚠️ Tópico '$topicName' já existe. Nenhuma alteração feita."
+          else
+            echo "✅ Tópico novo. A adicionar..."
+            table_rows=$(echo -e "$table_rows\n$update" | sort -f -t'|' -k2,2)
+          fi
+
+          # Recriar ficheiro
+          {
+            echo "$table_header"
+            echo "$table_separator"
+            echo "$table_rows"
+            echo "$tail_content"
+          } > wiki_content.md
+
+          cp wiki_content.md content_to_upload.md
+          echo "📄 Ficheiro final:"
+          head -30 content_to_upload.md | cat -n
+
+      - name: Fetch current tags from Wiki.js
+        run: |
+          QUERY=$(cat << EOF
+          {         
+            pages {
+              single (id:$WIKI_KAFKA_PAGE_ID) {
+                tags { tag }
+              }
+            }
+          }
+          EOF
+          )
+
+          JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
+
+          RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
+            -H "Authorization: Bearer $WIKI_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$JSON_PAYLOAD")
+
+          TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
+          echo "TAGS=$TAGS" >> "$GITHUB_ENV"
+
+      - name: Prepare GraphQL Payload
+        env:
+          TAGS: ${{ env.TAGS }}
+        run: |
+          echo "🛠 Preparing GraphQL payload..."
+
+          GRAPHQL_QUERY=$(cat << 'EOF'
+          mutation UpdatePage($id: Int!, $content: String!, $tags: [String!]) {
+            pages {
+              update(
+                id: $id,
+                content: $content,
+                editor: "markdown",
+                isPrivate: false,
+                isPublished: true,
+                locale: "en",
+                tags: $tags
+              ) {
+                responseResult {
+                  succeeded
+                  slug
+                  message
+                }
+                page {
+                  id
+                  title
+                  path
+                  updatedAt
+                }
+              }
+            }
+          }
+          EOF
+          )
+
+          RAW_CONTENT=$(cat content_to_upload.md)
+
+          VARIABLES=$(jq -n \
+            --arg id "$WIKI_KAFKA_PAGE_ID" \
+            --arg content "$RAW_CONTENT" \
+            --argjson tags "$TAGS" \
+            '{id: ($id | tonumber), content: $content, tags: $tags}')
+
+          echo "$GRAPHQL_QUERY" > query.graphql
+          echo "$VARIABLES" > variables.json
+
+      - name: Upload Content to Wiki.js
+        run: |
+          echo "🚀 Uploading updated content to Wiki.js..."
+
+          JSON_PAYLOAD=$(jq -n \
+            --arg query "$(cat query.graphql)" \
+            --argjson variables "$(cat variables.json)" \
+            '{query: $query, variables: $variables}')
+
+          curl -X POST "https://wiki.franquinho.info/graphql" \
+            -H "Authorization: Bearer $WIKI_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
+
+          echo "✅ Upload complete."
