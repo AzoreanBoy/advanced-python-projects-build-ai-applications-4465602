@@ -47,6 +47,7 @@ jobs:
 
       - name: Update Content
         run: |
+          # Criação de nova Linha
           CONFIG_FILE="${{ env.CONFIG_PATH }}"
           topicName=$(jq -r '.metadata.topicName' "$CONFIG_FILE")
           topicDescription=$(jq -r '.metadata.topicDescription' "$CONFIG_FILE")
