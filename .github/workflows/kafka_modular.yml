@@ -34,7 +34,7 @@ jobs:
 
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
 
-          RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
+          RESPONSE=$(curl -s -X POST "http://wikilab2.internal.ctt.pt/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
@@ -117,7 +117,7 @@ jobs:
 
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
 
-          RESPONSE=$(curl -s -X POST "https://wiki.franquinho.info/graphql" \
+          RESPONSE=$(curl -s -X POST "http://wikilab2.internal.ctt.pt/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
@@ -180,7 +180,7 @@ jobs:
             --argjson variables "$(cat variables.json)" \
             '{query: $query, variables: $variables}')
 
-          curl -X POST "https://wiki.franquinho.info/graphql" \
+          curl -X POST "http://wikilab2.internal.ctt.pt/graphql" \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
