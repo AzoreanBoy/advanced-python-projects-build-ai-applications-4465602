@@ -11,6 +11,7 @@ jobs:
       CONFIG_PATH: config.json
       WIKI_API_TOKEN: ${{ secrets.WIKI_API_TOKEN }}
       WIKI_KAFKA_PAGE_ID: ${{ vars.WIKI_PAGE_ID_KAFKA}}
+      WIKI_URL: "http://wikilab2.internal.ctt.pt/graphql"
 
     steps:
       - name: Checkout repositório principal
@@ -34,7 +35,7 @@ jobs:
 
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
 
-          RESPONSE=$(curl -s -X POST "http://wikilab2.internal.ctt.pt/graphql" \
+          RESPONSE=$(curl -s -X POST $WIKI_URL \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
@@ -117,7 +118,7 @@ jobs:
 
           JSON_PAYLOAD=$(jq -n --arg q "$QUERY" '{query: $q}')
 
-          RESPONSE=$(curl -s -X POST "http://wikilab2.internal.ctt.pt/graphql" \
+          RESPONSE=$(curl -s -X POST $WIKI_URL \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
@@ -180,7 +181,7 @@ jobs:
             --argjson variables "$(cat variables.json)" \
             '{query: $query, variables: $variables}')
 
-          curl -X POST "http://wikilab2.internal.ctt.pt/graphql" \
+          curl -X POST $WIKI_URL \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD"
