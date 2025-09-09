@@ -25,7 +25,7 @@ jobs:
 
       - name: Fetch Content and Tags from Wiki
         run: |
-          echo "🔍 Fetching content and tags from Wiki.js..."
+          # echo "🔍 Fetching content and tags from Wiki.js..."
           QUERY=$(cat << EOF
           {         
             pages {
@@ -45,11 +45,11 @@ jobs:
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
 
-          echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
-          echo "✅ Content saved to wiki_content.md"
+          # echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
+          # echo "✅ Content saved to wiki_content.md"
 
-          echo "📄 Primeiras linhas do conteúdo Inicial:"
-          head -30 wiki_content.md | cat -n
+          # echo "📄 Primeiras linhas do conteúdo Inicial:"
+          # head -30 wiki_content.md | cat -n
 
           TAGS=$(echo "$RESPONSE" | jq -c '[.data.pages.single.tags[].tag]')
           echo "TAGS=$TAGS" >> "$GITHUB_ENV"
@@ -108,8 +108,8 @@ jobs:
           } > wiki_content.md
 
           cp wiki_content.md content_to_upload.md
-          echo "📄 Ficheiro final:"
-          head -30 content_to_upload.md | cat -n
+          # echo "📄 Ficheiro final:"
+          # head -30 content_to_upload.md | cat -n
 
       - name: Prepare GraphQL Payload
         env:
