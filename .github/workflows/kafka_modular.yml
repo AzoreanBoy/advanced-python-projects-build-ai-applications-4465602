@@ -5,7 +5,8 @@ on:
 
 jobs:
   update-topicos-kafka:
-    runs-on: [self-hosted, Linux, X64]
+    #runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     environment: dev
     env:
       CONFIG_PATH: config.json
