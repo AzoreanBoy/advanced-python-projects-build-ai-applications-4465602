@@ -164,10 +164,15 @@ jobs:
             --argjson variables "$(cat variables.json)" \
             '{query: $query, variables: $variables}')
 
-          curl -X POST $WIKI_URL \
+          RESULT=$(curl -X POST $WIKI_URL \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD"
-
-
-          echo "✅ Upload complete."
+            -d "$JSON_PAYLOAD")
+          
+          SUCCEEDED=$(echo "$RESULT" | jq -r '.data.pages.update.responseResult.succeeded')
+          
+          if [ "$SUCCEEDED" = "true" ]; then
+            echo "✅ Upload complete."
+          else
+            echo "⚠️ Upload Failed."
+          fi
