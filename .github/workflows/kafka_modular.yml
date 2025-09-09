@@ -45,7 +45,7 @@ jobs:
             -H "Content-Type: application/json" \
             --data "$JSON_PAYLOAD")
 
-          # echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
+          echo "$RESPONSE" | jq -r '.data.pages.single.content' > wiki_content.md
           # echo "✅ Content saved to wiki_content.md"
 
           # echo "📄 Primeiras linhas do conteúdo Inicial:"
