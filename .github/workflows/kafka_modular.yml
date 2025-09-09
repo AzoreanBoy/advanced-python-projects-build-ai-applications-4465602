@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: FEch Content and Tags from Wiki Page
+      - name: Fetch Content and Tags from Wiki
         run: |
           echo "🔍 Fetching content and tags from Wiki.js..."
           QUERY=$(cat << EOF
