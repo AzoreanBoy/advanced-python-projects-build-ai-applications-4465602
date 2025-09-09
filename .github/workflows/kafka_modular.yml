@@ -157,14 +157,12 @@ jobs:
 
       - name: Upload Content to Wiki.js
         run: |
-          echo "🚀 Uploading updated content to Wiki.js..."
-
           JSON_PAYLOAD=$(jq -n \
             --arg query "$(cat query.graphql)" \
             --argjson variables "$(cat variables.json)" \
             '{query: $query, variables: $variables}')
 
-          RESULT=$(curl -X POST $WIKI_URL \
+          RESULT=$(curl -s -X POST $WIKI_URL \
             -H "Authorization: Bearer $WIKI_API_TOKEN" \
             -H "Content-Type: application/json" \
             -d "$JSON_PAYLOAD")
