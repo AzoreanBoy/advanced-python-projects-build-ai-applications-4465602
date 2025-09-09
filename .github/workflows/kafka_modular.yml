@@ -115,8 +115,6 @@ jobs:
         env:
           TAGS: ${{ env.TAGS }}
         run: |
-          echo "🛠 Preparing GraphQL payload..."
-
           GRAPHQL_QUERY=$(cat << 'EOF'
           mutation UpdatePage($id: Int!, $content: String!, $tags: [String!]) {
             pages {
